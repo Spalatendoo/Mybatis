@@ -1236,4 +1236,185 @@ https://pagehelper.github.io/
 
 
 
-10 Lombok
+### 10 Lombok
+
+22版IDEA安装配置Lombok插件教程：
+
+http://t.csdn.cn/vlE09
+
+```java
+@Getter and @Setter
+@FieldNameConstants
+@ToString
+@EqualsAndHashCode
+@AllArgsConstructor, @RequiredArgsConstructor and @NoArgsConstructor
+@Log, @Log4j, @Log4j2, @Slf4j, @XSlf4j, @CommonsLog, @JBossLog, @Flogger, @CustomLog
+@Data
+@Builder
+@SuperBuilder
+@Singular
+@Delegate
+@Value
+@Accessors
+@Wither
+@With
+@SneakyThrows
+@StandardException
+@val
+@var
+experimental @var
+@UtilityClass
+```
+
+Lombok项目是一个java库，它可以自动插入到编辑器和构建工具中，增强java的性能。不需要再写getter、setter或equals方法，只要有一个[注解](https://baike.baidu.com/item/注解/22344968?fromModule=lemma_inlink)，你的类就有一个功能齐全的构建器、自动记录变量等等
+
+![image-20230323192953781](Mybatis.assets/image-20230323192953781.png)
+
+![image-20230323193000065](Mybatis.assets/image-20230323193000065.png)
+
+
+
+@Data 无参构造，get，set，tostring，hashcode，equals
+
+@AllArgsConstructor 有参构造，**使用该注解无参构造就会被替代**
+
+@NoArgsConstructor 再添加无参构造
+
+
+
+
+
+### 11 多对一处理
+
+情景：多个学生对应一个老师（多对一）——关联
+
+​			一个老师有很多学生（一对多）——集合
+
+![image-20230323200449743](Mybatis.assets/image-20230323200449743.png)
+
+```sql
+CREATE TABLE `teacher` (
+`id` INT (10) NOT NULL,
+`name` VARCHAR(30) DEFAULT NULL,
+PRIMARY KEY (`id`)
+)ENGINE = INNODB DEFAULT CHARSET = utf8mb4
+
+INSERT INTO teacher(`id`,`name`) VALUES  (1,'TeacherHu');
+
+
+CREATE TABLE `student`(
+`id` INT(10) NOT NULL,
+`name` VARCHAR(30) DEFAULT NULL,
+`tid`INT(10) DEFAULT NULL,
+PRIMARY KEY (`id`),
+KEY `fktid` (`tid`),
+CONSTRAINT `fktid` FOREIGN KEY (`tid`) REFERENCES `teacher` (`id`)
+)ENGINE= INNODB DEFAULT CHARSET=utf8mb4
+
+INSERT INTO student(`id`,`name`,`tid`) VALUES ('1','小胡','1');
+INSERT INTO student(`id`,`name`,`tid`) VALUES ('2','小明','1');
+INSERT INTO student(`id`,`name`,`tid`) VALUES ('3','小张','1');
+INSERT INTO student(`id`,`name`,`tid`) VALUES ('4','小李','1');
+INSERT INTO student(`id`,`name`,`tid`) VALUES ('5','小锅','1');
+```
+
+
+
+测试环境搭建
+
++ 导入Lombok
++ 新建实体类Teacher Student
+
+**Student 实体**
+
+```java
+@Data
+public class Student {
+    private int id;
+    private String name;
+    //学生需要关联一个老师
+    private Teacher teacher;
+}
+```
+
+**Teacher实体**
+
+```java
+@Data
+public class Teacher {
+    private int id;
+    private String name;
+}
+```
+
+
+
++ 建立Mapper接口
+
+测试用接口
+
+```java
+public interface TeacherMapper {
+@Select("select * from teacher where id = #{id}")
+    Teacher getTeacher(@Param("id") int id);
+}
+
+```
+
+
+
++ 建立Mapper.xml文件
+
+**studentMapper.xml**
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lk.Dao.StudentMapper">
+
+</mapper>
+```
+
+**teacherMapper.xml**
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lk.Dao.TeacherMapper">
+
+</mapper>
+```
+
+
+
++ 核心配置文件中绑定注册Mapper接口或文件
+
+```xml
+    <mappers>
+        <mapper class="com.lk.Dao.TeacherMapper"/>
+        <mapper class="com.lk.Dao.StudentMapper"/>
+    </mappers>
+```
+
+
+
++ 测试查询是否能够成功
+
+```java
+public class MyTest {
+    public static void main(String[] args) {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        TeacherMapper mapper = sqlSession.getMapper(TeacherMapper.class);
+
+        Teacher teacher = mapper.getTeacher(1);
+        System.out.println(teacher);
+
+        sqlSession.close();
+    }
+}
+```
+
