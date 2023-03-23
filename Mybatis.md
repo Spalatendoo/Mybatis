@@ -1006,4 +1006,234 @@ select * from user limit 3;
 
 
 
-#### RowBounds 分页
+#### RowBounds 分页 （了解）
+
+不使用SQL实现分页
+
+1 接口
+
+```java
+    //分页2
+    List<User> getUserByBounds();
+```
+
+2 Mapper.xml
+
+```xml
+    <!--分页2-->
+    <select id="getUserByBounds" resultMap="UserMap">
+        select * from mybatis.user
+    </select>
+```
+
+3 测试
+
+```java
+    @Test
+    public void getUserByBounds(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+
+        //RowBounds 实现
+        RowBounds rowBounds = new RowBounds(1, 2);
+        //通过java代码层面实现分层；
+        List<User> userlist = sqlSession.selectList("com.lk.Dao.UserMapper.getUserByBounds",null,rowBounds);
+        for (User user : userlist) {
+            System.out.println(user);
+        }
+
+        sqlSession.close();
+
+    }
+```
+
+![image-20230323144633988](Mybatis.assets/image-20230323144633988.png)
+
+
+
+
+
+#### 分页插件
+
+https://pagehelper.github.io/
+
+
+
+![image-20230323145019793](Mybatis.assets/image-20230323145019793.png)
+
+
+
+
+
+### 9 使用注解开发
+
+#### 面向接口编程
+
+之前学过面向对象编程，也学习过接口，但在真正的开发中，很多时候会选择面向接口编程。
+**根本原因：==解耦==，可拓展，提高复用，分层开发中，上层不用管具体的实现，大家都遵守共同的标准，使得开发变得容易，规范性更好**
+在一个面向对象的系统中，系统的各种功能是由许许多多的不同对象协作完成的。在这种情况下，各个对象内部是如何实现自己的，对系统设计人员来讲就不那么重要了；
+而各个对象之间的协作关系则成为系统设计的关键。小到不同类之间的通信，大到各模块之间的交互，在系统设计之初都是要着重考虑的，这也是系统设计的主要工作内容。面向接口编程就是指按照这种思想来编程。
+
+**关于接口的理解**
+
+- 接口从更深层次的理解，应该是定义（约束，规范）与实现（名实分离的原则）的分离
+- 接口的本身反映了系统设计人员对系统的抽象理解
+- 接口应有两类
+  - 1 对一个个体的抽象，它可对应为一个抽象 体（abstract class）
+  - 2 对一个个体某一方面的抽象，即形成一个抽象面（interface）
+- 一个个体有可能有多个抽象面。抽象体与抽象面是有区别的
+
+
+
+#### 使用注解开发
+
+对于像 Mapper 映射器类来说，还有另一种方法来完成语句映射。 它们映射的语句可以不用 XML 来配置，而可以使用==Java 注解==来配置
+
+**1 注解在接口上实现**
+
+```java
+    @Select("select * from user")
+        List<User> getUsers();
+```
+
+**2 需要在核心配置文件中绑定接口**
+
+```xml
+<!--绑定接口-->
+    <mappers>
+        <mapper class="com.lk.Dao.UserMapper"/>
+    </mappers>
+```
+
+**3 测试**
+
+本质：反射机制实现
+
+底层：动态代理
+
+```java
+    @Test
+    public void addUsers(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+
+        //底层主要应用反射
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        List<User> users = mapper.getUsers();
+        for (User user : users) {
+            System.out.println(user);
+        }
+        sqlSession.close();
+    }
+```
+
+![image-20230323151843780](Mybatis.assets/image-20230323151843780.png)
+
+
+
+#### ==Mybatis执行流程==
+
+#### CRUD
+
+可以在工具类创建的时候实现自动提交事务
+
+![image-20230323162318206](Mybatis.assets/image-20230323162318206.png)
+
++ 查找
+
+```java
+    //方法存在多个参数，所有的参数前面必须加上 @Param("id")注解
+    @Select("select * from user where id = #{id} and name = #{name}")
+    User getUserById(@Param("id") int id,@Param("name") String name);
+
+```
+
+接口在上面例子已绑定
+
+进行测试
+
+```java
+    @Test
+    public void getUserById(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+
+        //底层主要应用反射
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        User user = mapper.getUserById(1,"lk");
+        System.out.println(user);
+        sqlSession.close();
+    }
+```
+
+![image-20230323160409185](Mybatis.assets/image-20230323160409185.png)
+
+可以查出来 但是pwd 为null，之前通过Mapper.xml方式通过Map映射可以将pwd映射为password得到pwd的值，注解方式可以解决这个问题吗(pojo类属性字段为password，将password改为pwd倒是可以解决)
+
+另外，
+
+![image-20230323160812321](Mybatis.assets/image-20230323160812321.png)
+
+
+
+**关于@Param( )注解**
+
++ 基本类型的参数或者String类型，需要加上
++ 引用类型不需要加
++ 如果只有一个基本类型的话，可以忽略，建议都加上
++ 在SQL中引用的就是这里的@Param（）中设定的属性名
+
+
+
+
+
+
+
++ 增加
+
+接口
+
+```java
+    @Insert("insert into user(id,name,pwd) values(#{id},#{name},#{password})")
+    int addUser(User user);
+```
+
+![image-20230323161715432](Mybatis.assets/image-20230323161715432.png)
+
+绑定接口
+
+测试
+
+```java
+    @Test
+    public void addUser(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+
+        //底层主要应用反射
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        int user = mapper.addUser(new User(6, "xmr", "123456"));
+
+        sqlSession.close();
+    }
+```
+
+`不用提交事务，配置中自动提交`
+
+![image-20230323161519591](Mybatis.assets/image-20230323161519591.png)
+
+
+
++ 改
+
+```java
+    @Update("update user set name=#{name},pwd=#{password} where id =#{id}")
+    int updateUser(User user);
+```
+
++ 删
+
+```java
+    @Delete("delete from user where id = #{id}")
+    int deleteUser(@Param("id") int id);
+```
+
+
+
+10 Lombok

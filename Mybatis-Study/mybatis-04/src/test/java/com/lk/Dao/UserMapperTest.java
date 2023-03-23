@@ -2,6 +2,7 @@ package com.lk.Dao;
 
 import com.lk.pojo.User;
 import com.lk.utils.MybatisUtils;
+import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.log4j.Logger;
 import org.junit.Test;
@@ -45,5 +46,21 @@ public class UserMapperTest {
             System.out.println(user);
         }
         sqlSession.close();
+    }
+
+    @Test
+    public void getUserByBounds(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+
+        //RowBounds 实现
+        RowBounds rowBounds = new RowBounds(1, 2);
+        //通过java代码层面实现分层；
+        List<User> userlist = sqlSession.selectList("com.lk.Dao.UserMapper.getUserByBounds",null,rowBounds);
+        for (User user : userlist) {
+            System.out.println(user);
+        }
+
+        sqlSession.close();
+
     }
 }

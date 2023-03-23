@@ -20,6 +20,11 @@
         select * from mybatis.user limit #{startIndex},#{pageSize}
     </select>
 
+    <!--分页2-->
+    <select id="getUserByBounds" resultMap="UserMap">
+        select * from mybatis.user
+    </select>
+
 
 
 
