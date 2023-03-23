@@ -703,3 +703,307 @@ SqlSession 的实例不是线程安全的，因此是不能被共享的，所以
 
 
 
+将pojo包下的属性pwd改为password,
+
+```java
+public class User {
+    private int id;
+    private String name;
+    private String password;
+```
+
+
+
+测试 根据id查找用户
+
+```java
+    @Test
+    public void getUserList(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+
+        User user = mapper.getUserById(1);
+
+        System.out.println(user);
+
+        sqlSession.close();
+    }
+```
+
+测试结果
+
+![image-20230323094609242](Mybatis.assets/image-20230323094609242.png)
+
+**pwd = null**
+
+数据库中字段为
+
+![image-20230323094642671](Mybatis.assets/image-20230323094642671.png)
+
+而User属性密码字段为 password ,属性和字段名不一致，导致查询不到pwd
+
+
+
+![image-20230323095014040](Mybatis.assets/image-20230323095014040.png)
+
+
+
+
+
+==解决方案==
+
++ **起别名**
+
+![image-20230323095206934](Mybatis.assets/image-20230323095206934.png)
+
++ 通过结果集映射resultMap映射 数据库字段和属性
+
+```xml
+    <resultMap id="UserMap" type="User">
+        <!--column 数据库的字段 ， property 实体类中的属性-->
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="pwd" property="password"/>
+    </resultMap>
+    <select id="getUserById" parameterType="int" resultMap="UserMap">
+        select * from mybatis.user where id = #{id}
+
+    </select>
+```
+
+![image-20230323095846136](Mybatis.assets/image-20230323095846136.png)
+
+
+
+
+
+`resultMap` 元素是 MyBatis 中最重要最强大的元素。ResultMap 的设计思想是，对简单的语句做到零配置，对于复杂一点的语句，只需要描述语句之间的关系就行了。
+
+
+
+### 7 日志
+
+####  日志工厂
+
+数据库操作出现异常，需要排错，需要查看日志
+
+之前解决方法：sout debug
+
+
+
+![image-20230323101544946](Mybatis.assets/image-20230323101544946.png)
+
++ SLF4J 
+
++ LOG4J（3.5.9 起废弃） 
++  LOG4J2 
++ JDK_LOGGING 
++ COMMONS_LOGGING 
++ STDOUT_LOGGING 
++  NO_LOGGING
+
+
+
+在Mybatis中具体使用哪一个日志实现，在设置中设定
+
+
+
+在mybatis核心配置文件中，配置我们的日志
+
+![image-20230323102505783](Mybatis.assets/image-20230323102505783.png)
+
+
+
+
+
+```xml
+    <settings>
+        <setting name="logImpl" value="STDOUT_LOGGING"/>
+    </settings>
+//STDOUT_LOGGING 默认的日志，使用其他日志可能需要另外导包
+```
+
+
+
+#### Log4j
+
+Log4j是[Apache](https://baike.baidu.com/item/Apache/8512995?fromModule=lemma_inlink)的一个[开源项目](https://baike.baidu.com/item/开源项目/3406069?fromModule=lemma_inlink)，通过使用Log4j，我们可以控制日志信息输送的目的地是[控制台](https://baike.baidu.com/item/控制台/2438626?fromModule=lemma_inlink)、文件、GUI组件
+
+可以控制每一条日志的[输出格式](https://baike.baidu.com/item/输出格式/14456488?fromModule=lemma_inlink)
+
+通过定义每一条日志信息的级别，我们能够更加细致地控制日志的生成过程
+
+可以通过一个[配置文件](https://baike.baidu.com/item/配置文件/286550?fromModule=lemma_inlink)来灵活地进行配置，而不需要修改应用的代码。
+
+
+
+
+
++ 导如log4j的包
+
+```xml
+<!-- https://mvnrepository.com/artifact/log4j/log4j -->
+<dependency>
+    <groupId>log4j</groupId>
+    <artifactId>log4j</artifactId>
+    <version>1.2.17</version>
+</dependency>
+
+```
+
++ 在resources目录下新建 lo4j.properties ，配置log4j的配置文件
+
+```properties
+#将等级为DEBUG的日志信息输出到console和file这两个目的地，console和file的定义在下面的代码
+log4j.rootLogger=DEBUG,console,file
+
+#控制台输出的相关设置
+log4j.appender.console = org.apache.log4j.ConsoleAppender
+log4j.appender.console.Target = System.out
+log4j.appender.console.Threshold=DEBUG
+log4j.appender.console.layout = org.apache.log4j.PatternLayout
+log4j.appender.console.layout.ConversionPattern=【%c】-%m%n
+
+#文件输出的相关设置
+log4j.appender.file = org.apache.log4j.RollingFileAppender
+log4j.appender.file.File=./log/kuang.log
+log4j.appender.file.MaxFileSize=10mb
+log4j.appender.file.Threshold=DEBUG
+log4j.appender.file.layout=org.apache.log4j.PatternLayout
+log4j.appender.file.layout.ConversionPattern=【%p】【%d{yy-MM-dd}】【%c】%m%n
+
+#日志输出级别
+log4j.logger.org.mybatis=DEBUG
+log4j.logger.java.sql=DEBUG
+log4j.logger.java.sql.Statement=DEBUG
+log4j.logger.java.sql.ResultSet=DEBUG
+log4j.logger.java.sql.PreparedStatement=DEBUG
+
+```
+
+
+
++ mybatis核心配置文件中配置log4j的实现
+
+```xml
+    <settings>
+        <setting name="logImpl" value="LOG4J"/>
+    </settings>
+```
+
++ 测试
+
+![image-20230323105127200](Mybatis.assets/image-20230323105127200.png)
+
+
+
+
+
+==简单使用==
+
++ 在要使用log4j的类中，导入包（apache的包） import org.apache.log4j.Logger;
++ 获取日志对象，参数为当前类的class
+
+```java
+static Logger logger = Logger.getLogger(UserMapperTest.class);
+```
+
++ 日志级别
+
+```java
+        logger.info("info:进入了testlog4j");
+        logger.debug("debug:进入了testLog4j");
+        logger.error("error:进入了testlog4j");
+```
+
+
+
+
+
+### 8 分页
+
+
+
+
+
+#### 使用limit分页
+
+```sql
+语法：select * from user limit startIndex,pagesize;
+```
+
+
+
+```sql
+select * from user limit 0,2;
+```
+
+每页显示两个 从第0个开始查找
+
+![image-20230323110704125](Mybatis.assets/image-20230323110704125.png)
+
+```sql
+select * from user limit 2,2;
+```
+
+每页显示两个 从第2个开始查找
+
+![image-20230323110809889](Mybatis.assets/image-20230323110809889.png)
+
+```sql
+select * from user limit 3;
+```
+
+查询前3条内容
+
+
+
+
+
++ **使用Mybatis实现分页，(核心SQL)**
+
+ 1 接口
+
+```java
+
+    //分页
+    List<User> getUserByLimit(Map<String,Integer> map);
+```
+
+
+
+2 Mapper.xml
+
+```xml
+    <select id="getUserByLimit" parameterType="map" resultMap="UserMap">
+        select * from mybatis.user limit #{startIndex},#{pageSize}
+    </select>
+```
+
+
+
+3 测试
+
+```java
+    @Test
+    public void getUserByLimit(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+
+        HashMap<String, Integer> maplist = new HashMap<>();
+        maplist.put("startIndex",0);
+        maplist.put("pageSize",2);
+        System.out.println(maplist);
+        List<User> userList = mapper.getUserByLimit(maplist);
+        for (User user : userList) {
+            System.out.println(user);
+        }
+        sqlSession.close();
+    }
+```
+
+![image-20230323122433407](Mybatis.assets/image-20230323122433407.png)
+
+
+
+#### RowBounds 分页

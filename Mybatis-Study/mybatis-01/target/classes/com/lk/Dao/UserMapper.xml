@@ -6,7 +6,7 @@
 <mapper namespace="com.lk.Dao.UserMapper">
 
     <select id="getUserLike" resultType="com.lk.pojo.User">
-        select * from mybatis.user where name like #{value}
+        select * from mybatis.user where name like "%"#{value}"%"
     </select>
     <!--id 对应实现接口的方法名字-->
     <select id="getUserList" resultType="com.lk.pojo.User" >
