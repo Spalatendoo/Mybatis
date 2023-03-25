@@ -1743,3 +1743,94 @@ List<Blog> queryBlogIF(Map map);
 
 
 #### foreach
+
+```sql
+select * from user where 1=1 and (id = 1 or id =2 or id = 3)
+
+ <foreach item="id"  collection="ids"
+        open="(" separator="or" close=")" >
+          #{id}
+ </foreach>
+    (id = 1 or id =2 or id = 3)
+```
+
+==动态sql就是在拼接SQL语句，我们只要保证SQL的正确性，按照SQL的格式，去排列组合就好了==
+
+建议在Mysql种写出完整的SQL，再对应的去修改
+
+
+
+```sql
+select * from mybatis.blog where 1=1 and(id = 1 or id =2 or id = 3)
+```
+
+```xml
+    <!--foreach测试-->
+    <!--传递一个万能的map，这个map种可以存在一个集合-->
+    <select id="queryBlogForeach" parameterType="map" resultType="blog">
+        select * from mybatis.blog
+/*select * from mybatis.blog where 1=1 and(id = 1 or id =2 or id = 3)*/
+    <where>
+        <foreach collection="ids" item="id" open="and (" close=")" separator="or">
+            id = #{id}
+        </foreach>
+    </where>
+    </select>
+```
+
+**测试**
+
+```java
+    @Test
+    public void queryBlogForeach(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        BlogMapper mapper = sqlSession.getMapper(BlogMapper.class);
+        HashMap map = new HashMap();
+
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(1);
+//添加id为1的元素，查询到id=1的值
+        map.put("ids",ids);
+        //map.put("title","Java2");
+        //map.put("id","dd445098b5f14628b8bb947d72e765a8");
+        //map.put("views",9999);
+        List<Blog> blogList = mapper.queryBlogForeach(map);
+        for (Blog blog : blogList) {
+            System.out.println(blog);
+        }
+
+        sqlSession.close();
+    }
+```
+
+
+
+#### SQL片段
+
+有的时候，我们可能会将一些公共的部分抽取出来，方便复用
+
++ 使用SQL标签抽取公共部分
+
+```xml
+    <sql id="if-title-author">
+        <if test="title != null">
+            title = #{title}
+        </if>
+        <if test="author != null">
+            and author = #{author}
+        </if>
+    </sql>
+```
+
++ 在需要使用的地方使用include标签引用即可
+
+```xml
+ <select id="queryBlogIF" parameterType="map" resultType="blog">
+        select * from mybatis.blog
+        <where>
+            <include refid="if-title-author"></include>
+        </where>
+        
+  </select>
+```
+
