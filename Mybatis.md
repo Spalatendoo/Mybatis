@@ -1418,3 +1418,328 @@ public class MyTest {
 }
 ```
 
+
+
+
+
+**==按照查询嵌套处理==**
+
+```xml
+    <!--
+    查询所有学生信息
+    根据查询出来的学生的tid，寻找对应老师
+    -->
+    <select id="getStudent" resultMap="StudentTeacher">
+        select * from mybatis.student
+    </select>
+    <resultMap id="StudentTeacher" type="Student">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+
+        <!--
+            复杂的属性，需要单独处理
+            对象 ： association
+            集合 : collection
+        -->
+        <association property="teacher" column="tid" javaType="Teacher" select="getTeacher"/>
+    </resultMap>
+
+    <select id="getTeacher" resultType="Teacher">
+        select * from mybatis.teacher where id = #{id}
+    </select>
+
+</mapper>
+```
+
+
+
+**==按照结果嵌套处理==**
+
+```xml
+  <!--按照结果嵌套处理-->
+    <!--
+    查询所有学生信息
+    根据查询出来的学生的tid，寻找对应老师
+    -->
+    <select id="getStudent2" resultMap="StudentTeacher2">
+        select s.id sid,s.name snama,t.name tname
+        from mybatis.student s ,mybatis.teacher t
+        where s.tid=t.id
+    </select>
+
+    <resultMap id="StudentTeacher2" type="Student">
+        <result property="id" column="sid"/>
+        <result property="name" column="sname"/>
+
+        <association property="teacher" javaType="Teacher">
+            <result property="name" column="tname"/>
+        </association>
+    </resultMap>
+```
+
+![image-20230325094821022](Mybatis.assets/image-20230325094821022.png)
+
+
+
+回顾Mysql 多对一查询方式
+
++ 子查询
++ 联表查询
+
+
+
+### 12 一对多处理
+
+情景：一个老师有多个学生，对于老师而言，就是一对多
+
+
+
+**环境搭建**
+
++ 导包（lombok）
+
++ 匹配文件
++ 创建实体类
+
+```java
+@Data
+public class Student {
+    private int id;
+    private String name;
+
+    private int tid;
+}
+
+@Data
+public class Teacher {
+    private int id;
+    private String name;
+
+    //一个老师拥有多个学生
+    private List<Student> students;
+}
+```
+
++ 编写mapper
++ 测试
+
+
+
+==按照结果嵌套处理==
+
+```xml
+    <!--按结果嵌套查询-->
+    <select id="getTeacher" resultMap="TeacherStudent">
+        select s.id sid ,s.name snam,t.name tname,t.id tid from mybatis.student s,mybatis.teacher t
+        where s.tid = t.id and t.id = #{tid}
+    </select>
+    
+    <resultMap id="TeacherStudent" type="Teacher">
+        <result property="id" column="tid"/>
+        <result property="name" column="tname"/>
+        <!--复杂的属性，需要单独处理，对象： association 集合： collection
+        javaType="" 指定属性的类型
+        集合中的泛型信息，我们使用ofType
+        -->
+        <collection property="students" ofType="Student">
+            <result property="id" column="sid"/>
+            <result property="name" column="sname"/>
+            <result property="tid" column="tid"/>
+        </collection>
+    </resultMap>
+```
+
+
+
+==按照查询嵌套处理==
+
+```xml
+    <select id="getTeacher2" resultMap="TeacherStudent2">
+        select * from mybatis.teacher where id = #{tid}
+    </select>
+    <resultMap id="TeacherStudent2" type="Teacher">
+        <collection property="students" javaType="ArrayList" ofType="Student" select="getStudentByTeacherId" column="id"/>
+    </resultMap>
+
+    <select id="getStudentByTeacherId" resultType="Student">
+        select * from mybatis.student where tid = #{tid}
+    </select>
+```
+
+
+
+
+
+**小结**
+
+1 关联 - association 【多对一】
+
+2 集合 - collection 【一对多】
+
+3 javaType & ofType
+
+​		 javaType 用来指定实体类中属性的类型
+
+​		ofType 用来指定映射到List或者集合中的pojo类型，泛型中的约束类型
+
+面试高频
+
++ Mysql引擎
++ InnoDB底层原理
++ 索引
++ 索引优化
+
+
+
+### 13 动态SQL
+
+**动态SQL：动态SQL就是指根据不同的条件生成不同的SQL语句**
+
+简化下面的SQL拼接
+
+![image-20230325110915545](Mybatis.assets/image-20230325110915545.png)
+
+
+
+之前用过 JSTL 或任何基于类 XML 语言的文本处理器，你对动态 SQL 元素可能会感觉似曾相识。在 MyBatis 之前的版本中，需要花时间了解大量的元素。借助功能强大的基于 OGNL 的表达式，MyBatis 3 替换了之前的大部分元素，大大精简了元素种类，现在要学习的元素种类比原来的一半还要少。
+
+- if
+- choose (when, otherwise)
+- trim (where, set)
+- foreach
+
+
+
+
+
+==搭建环境==
+
+```SQL
+CREATE TABLE `blog`(
+`id` VARCHAR (50) NOT NULL COMMENT '博客id',
+`title` VARCHAR (100) NOT NULL COMMENT '博客标题',
+`author` VARCHAR(30) NOT NULL COMMENT '博客作者',
+`create_time` DATETIME NOT NULL COMMENT '创建时间',
+`views` INT(30) NOT NULL COMMENT '浏览量'
+)ENGINE = INNODB DEFAULT CHARSET=utf8mb4
+
+```
+
+
+
+创建一个基础工程
+
++ 导包
++ 编写配置文件
++ 编写实体类
++ 编写实体类对应Mapper接口和Mapper.xml文件
+
+
+
+#### IF标签
+
+**接口**
+
+```java
+List<Blog> queryBlogIF(Map map);
+```
+
+
+
+**Mapper.xml**
+
+```xml
+ <select id="queryBlogIF" parameterType="map" resultType="blog">
+       /* select * from mybatis.blog where title = #{title} and author = #{author}*/
+        select * from mybatis.blog where 1=1
+        <if test="title != null"> and title = #{title} </if>
+
+        <if test="author != null">and author = #{author}</if>
+
+    </select>
+```
+
+
+
+**测试**
+
+
+
+#### choose、when、otherwise
+
+```xml
+    <select id="queryBlogChoose" parameterType="map" resultType="blog">
+        select * from mybatis.blog
+        <where>
+            <choose>
+                <when test="title != null">
+                    title = #{title}
+                </when>
+
+                <when test="author != null">
+                    and author = #{author}
+                </when>
+                <otherwise>
+                    and views = #{views}
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+```
+
+有点像 Java 中的 switch 语句。
+
+#### trim、where、set
+
+**接口**
+
+```java
+    //更新
+    int updateBlog(Map map);
+```
+
+
+
+**Mapper.xml**
+
+```xml
+<update id="updateBlog" parameterType="map" >
+    update mybatis.blog
+    <set>
+        <if test="title != null">
+            title = #{title},
+        </if>
+        <if test="author != null">
+            author = #{author}
+        </if>
+    </set>
+    where id = #{id}
+</update>
+```
+
+`Note：注意title = #{title} 后面要有 逗号`
+
+测试
+
+```java
+    @Test
+    public void uppdateBlog(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        BlogMapper mapper = sqlSession.getMapper(BlogMapper.class);
+        HashMap map = new HashMap();
+        map.put("title","Java2");
+        map.put("author","lll");
+        map.put("id","dd445098b5f14628b8bb947d72e765a8");
+        //map.put("views",9999);
+        mapper.updateBlog(map);
+        sqlSession.close();
+    }
+```
+
+==所谓的动态SQL 本质上还是SQL语句。只是我们可以在SQL层面，去执行一个逻辑代码==
+
+
+
+
+
+#### foreach
