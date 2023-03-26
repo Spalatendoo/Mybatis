@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="522b505f-4f17-4edf-a336-5847d0afb0c8" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/main/java/com/lk/dao/UserMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/main/java/com/lk/dao/UserMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/main/java/com/lk/pojo/User.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/main/java/com/lk/utils/IDUtils.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/main/java/com/lk/utils/MybatisUtils.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/main/resources/db.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/main/resources/ehcache.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/main/resources/mybatis-config.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../Mybatis-Study/mybatis-10/src/test/java/MyTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Mybatis-Study/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../Mybatis-Study/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Mybatis-Study/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../Mybatis-Study/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Mybatis-Study/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../Mybatis-Study/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Mybatis.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../Mybatis.md" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2NXfiO4U4Ftq5NAp7MzgsejFOXc" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "E:/LearningNotes/JAVA/Mybatis/Mybatis-kuang--master/Mybatis-kuang--master",
+    "nodejs_package_manager_path": "npm"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="522b505f-4f17-4edf-a336-5847d0afb0c8" name="Changes" comment="" />
+      <created>1679815473299</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1679815473299</updated>
+      <workItem from="1679815475232" duration="53000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

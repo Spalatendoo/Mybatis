@@ -1834,3 +1834,263 @@ select * from mybatis.blog where 1=1 and(id = 1 or id =2 or id = 3)
   </select>
 ```
 
+### 14 缓存
+
+```
+查询 需要连接数据库，耗费资源
+一次查询的结果，给他暂存在一个可以直接取到的地方！ --> 内存：缓存
+再次查询相同数据的时候，直接走缓存，就不用走数据库了
+```
+
+`什么是缓存`
+
+Cache
+
++ 存在内存中的临时数据
++ 将用户经常查询的数据放在缓存中，用户去查询数据就不用从磁盘上（关系型数据库数据文件）查询，从缓存中查询，提高效率，解决高并发系统的性能问题
+
+`为什么使用缓存`
+
+减少和数据库的交互次数，减少系统开销，提高系统嘻嘻澳旅
+
+`什么样的数据能使用缓存`
+
+经常查询且不经常改变的数据
+
+
+
+#### Mybatis缓存
+
+![image-20230326112114161](Mybatis.assets/image-20230326112114161.png)
+
+![image-20230326112137170](Mybatis.assets/image-20230326112137170.png)
+
+##### 一级缓存
+
+也叫本地缓存：SqlSession
+
+与数据库同一次会话期间查询到的数据会放在本地缓存中
+
+以后如果需要获取相同的数据，直接从缓存中拿，没必要再去查询数据库
+
+==测试==
+
+```
+1 开启日志
+2 测试在一个Session中查询两次相同记录
+3 查看日志输出
+```
+
+![image-20230326122914266](Mybatis.assets/image-20230326122914266.png)
+
+
+
+==缓存失效的情况==
+
++ **查询不同的东西**
+
+```java
+@Test
+public void test(){
+    SqlSession sqlSession = MybatisUtils.getSqlSession();
+    UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+    User user = mapper.queryUserID(1);
+    System.out.println(user);
+
+    System.out.println("==================");
+
+    User user2 = mapper.queryUserID(2);
+    System.out.println(user2);
+
+    sqlSession.close();
+}
+```
+
+
+
+![image-20230326123159460](Mybatis.assets/image-20230326123159460.png)
+
++ ==增删改操作，可能会改变原来的数据，所以必定会刷新缓存==
+
+```java
+    @Test
+    public void test(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        User user = mapper.queryUserID(1);
+        System.out.println(user);
+        mapper.updateUser(new User(2,"aaa","111111"));
+
+        System.out.println("==================");
+
+        User user2 = mapper.queryUserID(1);
+        System.out.println(user2);
+
+        System.out.println(user == user2);
+        sqlSession.close();
+    }
+```
+
+![image-20230326142913638](Mybatis.assets/image-20230326142913638.png)
+
++ ==查询不同的Mapper.xml==
++ ==手动清理缓存==
+
+![image-20230326143035263](Mybatis.assets/image-20230326143035263.png)
+
+
+
+小结：一级缓存默认是开启的，只在一次SqlSession中有效，也就是拿到连接到关闭连接这个区间段
+
+​			一级缓存相当于一个map
+
+
+
+##### **二级缓存**
+
+二级缓存也叫全局缓存，一级缓存作用域太低了，所以诞生了二级缓存
+
+基于namespace级别的缓存，一个名称空间，对应一个二级缓存
+
+​      **工作机制**：
+
+​		一个会话查询一条数据，这个数据就会被放在当前会话的一级缓存中
+
+​		如果当前会话关闭了，这个会话对应的一级缓存就没了；但是我们想要的是，会话关闭了，一级缓存中的数据被保存到二级缓存中
+
+​		新的会话查询信息，就可以从二级缓存中获取内容
+
+
+
+​	**步骤**：
+
+![image-20230326143649714](Mybatis.assets/image-20230326143649714.png)
+
+1、开启缓存
+
+```xml
+<setting name="cacheEnabled" value="true"/>
+```
+
+之后也可以选择在Mapper中选择不使用缓存
+
+![image-20230326144017241](Mybatis.assets/image-20230326144017241.png)
+
+
+
+2、在要使用二级缓存的Mapper中开启
+
+
+
+```xml
+<!--在当前的Mapper.xml中使用二级缓存-->
+<cache/>
+```
+
+也可以自定义一些参数
+
+```xml
+<cache
+        eviction="FIFO"
+        flushInterval="60000"
+        size="512"
+        readOnly="true"/>
+```
+
+
+
+
+
+**==测试==**
+
+```java
+   //开启两个sqlSession，分别对ID=1进行查询
+@Test
+    public void test(){
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        SqlSession sqlSession1 = MybatisUtils.getSqlSession();
+
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        UserMapper mapper1 = sqlSession1.getMapper(UserMapper.class);
+
+        User user = mapper.queryUserID(1);
+        System.out.println(user);
+
+        User user1 = mapper1.queryUserID(1);
+        System.out.println(user1);
+
+
+        sqlSession.close();
+        sqlSession1.close();
+    }
+```
+
+![image-20230326144633373](Mybatis.assets/image-20230326144633373.png)
+
+走了两次SQL
+
+
+
+**==开启二级缓存测试==**
+
+二级缓存是事务性的。这意味着，当 SqlSession 完成并提交时，或是完成并回滚，但没有执行 flushCache=true 的 insert/delete/update 语句时，缓存会获得更新。
+
+
+
+```java
+public void test(){
+    SqlSession sqlSession = MybatisUtils.getSqlSession();
+    SqlSession sqlSession1 = MybatisUtils.getSqlSession();
+
+    UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+    User user = mapper.queryUserID(1);
+    System.out.println(user);
+    sqlSession.close();
+
+    UserMapper mapper1 = sqlSession1.getMapper(UserMapper.class);
+    User user1 = mapper1.queryUserID(1);
+    System.out.println(user1);
+
+
+    System.out.println(user == user1);
+    sqlSession1.close();
+}
+```
+
+
+
+小结：
+
++ 只要开启了二级缓存，在同一个Mapper下就有效
++ 所有的数据都会先放在一级缓存中
++ 只有当会话提交，或者关闭的时候，才会提交到二级缓存中
+
+
+
+#### 缓存原理
+
+![image-20230326151454047](Mybatis.assets/image-20230326151454047.png)
+
+#### 自定义缓存 - ehcache
+
+Ehcache是一种广泛使用的开源Java分布式缓存
+
+先导包
+
+```xml
+        <dependency>
+            <groupId>org.mybatis.caches</groupId>
+            <artifactId>mybatis-ehcache</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+```
+
+在mapper中指定使用ehcache缓存实现
+
+```xml
+<cache type="org.mybatis.caches.ehcache.EhcacheCache"/>
+```
+
+
+
+现在都用Reddis数据库来做缓存
